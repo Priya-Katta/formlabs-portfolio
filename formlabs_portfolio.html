@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sai Priya Katta -- Supply Chain Planner, Formlabs</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+:root{
+  --orange:#FF6B35;
+  --orange-glow:rgba(255,107,53,0.15);
+  --dark:#0A0A0F;
+  --dark-2:#111118;
+  --dark-3:#1A1A25;
+  --panel:#16161F;
+  --white:#FFFFFF;
+  --cream:#F0EDE8;
+  --text:#E8E8F0;
+  --muted:#6B6B80;
+  --border:rgba(255,107,53,0.15);
+  --border-dim:rgba(255,255,255,0.06);
+}
+body{font-family:'Space Grotesk',sans-serif;background:var(--dark);color:var(--text);overflow-x:hidden;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 56px;background:rgba(10,10,15,0.95);border-bottom:1px solid var(--border-dim);backdrop-filter:blur(12px);}
+.logo{font-family:'Space Mono',monospace;font-size:0.85rem;font-weight:700;color:var(--white);letter-spacing:0.05em;}
+.logo span{color:var(--orange);}
+.nav-links{display:flex;gap:28px;align-items:center;}
+.nav-links a{font-size:0.72rem;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color 0.2s;}
+.nav-links a:hover{color:var(--orange);}
+.nav-cta{background:var(--orange)!important;color:#fff!important;padding:7px 16px;}
+
+/* FLOAT */
+.float{position:fixed;bottom:24px;right:24px;z-index:300;background:var(--orange);color:#fff;padding:10px 18px;display:flex;align-items:center;gap:8px;font-size:0.72rem;font-weight:600;letter-spacing:0.06em;text-decoration:none;box-shadow:0 4px 24px rgba(255,107,53,0.4);transition:background 0.2s;}
+.float:hover{background:#E55A2B;}
+.fdot{width:7px;height:7px;border-radius:50%;background:#fff;animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* HERO */
+.hero{position:relative;height:100vh;overflow:hidden;background:var(--dark);display:flex;align-items:center;}
+#hero-canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
+
+/* Scan line animation */
+.scanline{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,107,53,0.4),transparent);animation:scanDown 6s linear infinite;pointer-events:none;z-index:2;}
+@keyframes scanDown{from{top:0}to{top:100%}}
+
+.hero-content{position:relative;z-index:3;padding:0 56px;max-width:700px;}
+.hero-mono{font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--orange);letter-spacing:0.2em;margin-bottom:20px;opacity:0.8;}
+.hero-mono span{color:rgba(255,107,53,0.4);}
+.hero-name{font-size:clamp(3rem,7vw,6rem);font-weight:700;line-height:0.9;color:var(--white);margin-bottom:16px;letter-spacing:-0.02em;}
+.hero-name em{color:var(--orange);font-style:normal;}
+.hero-role{font-family:'Space Mono',monospace;font-size:0.78rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:28px;border-left:2px solid var(--orange);padding-left:14px;}
+.hero-sub{font-size:0.92rem;font-weight:300;color:rgba(255,255,255,0.45);line-height:1.75;max-width:480px;margin-bottom:36px;}
+.hero-sub strong{color:rgba(255,255,255,0.8);font-weight:500;}
+.hero-btns{display:flex;gap:12px;}
+.btn-orange{background:var(--orange);color:#fff;padding:12px 26px;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-decoration:none;transition:background 0.2s;border:1px solid var(--orange);}
+.btn-orange:hover{background:#E55A2B;}
+.btn-outline{border:1px solid rgba(255,107,53,0.35);color:var(--orange);padding:11px 26px;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-decoration:none;transition:all 0.2s;background:transparent;}
+.btn-outline:hover{border-color:var(--orange);background:rgba(255,107,53,0.06);}
+
+/* Print progress indicator */
+.print-progress{position:absolute;right:56px;top:50%;transform:translateY(-50%);z-index:3;text-align:right;}
+.pp-label{font-family:'Space Mono',monospace;font-size:0.62rem;color:rgba(255,107,53,0.5);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;}
+.pp-bar-wrap{width:120px;height:2px;background:rgba(255,255,255,0.08);margin-bottom:20px;margin-left:auto;}
+.pp-bar{height:100%;background:var(--orange);animation:fillPP 8s ease-in-out infinite alternate;}
+@keyframes fillPP{from{width:20%}to{width:95%}}
+.pp-stats{display:flex;flex-direction:column;gap:12px;}
+.pp-stat{text-align:right;}
+.pp-stat-n{font-family:'Space Mono',monospace;font-size:1.2rem;font-weight:700;color:var(--orange);}
+.pp-stat-l{font-size:0.62rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-top:2px;}
+
+/* SECTION SHARED */
+section{padding:80px 56px;position:relative;}
+.s-inner{max-width:1100px;margin:0 auto;}
+.s-mono{font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--orange);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:8px;}
+.s-title{font-size:clamp(1.8rem,3.5vw,2.6rem);font-weight:700;color:var(--white);margin-bottom:44px;line-height:1.05;letter-spacing:-0.01em;}
+
+/* METRICS STRIP */
+.metrics-section{background:var(--dark-2);border-top:1px solid var(--border);border-bottom:1px solid var(--border-dim);}
+.metrics-inner{max-width:100%;display:grid;grid-template-columns:repeat(4,1fr);}
+.met{padding:36px 40px;border-right:1px solid var(--border-dim);transition:background 0.2s,transform 0.3s;cursor:default;transform-style:preserve-3d;}
+.met:last-child{border-right:none;}
+.met:hover{background:rgba(255,107,53,0.04);transform:perspective(400px) rotateX(5deg) translateY(-4px);}
+.met-n{font-family:'Space Mono',monospace;font-size:2.8rem;font-weight:700;color:var(--orange);line-height:1;margin-bottom:8px;}
+.met-l{font-size:0.82rem;font-weight:600;color:var(--white);margin-bottom:4px;}
+.met-s{font-size:0.73rem;font-weight:300;color:var(--muted);line-height:1.5;}
+
+/* MATCH GRID */
+.why-section{background:var(--dark-3);}
+.match-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border-dim);}
+.mc{background:var(--panel);padding:28px;position:relative;overflow:hidden;transition:transform 0.35s,box-shadow 0.35s;transform-style:preserve-3d;}
+.mc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--orange);transform:scaleX(0);transform-origin:left;transition:transform 0.4s;}
+.mc:hover{transform:perspective(500px) rotateY(-2deg) rotateX(3deg) translateY(-4px);box-shadow:8px 12px 32px rgba(0,0,0,0.4),0 0 0 1px rgba(255,107,53,0.15);}
+.mc:hover::before{transform:scaleX(1);}
+.mc-n{font-family:'Space Mono',monospace;font-size:2rem;font-weight:700;color:rgba(255,107,53,0.08);line-height:1;margin-bottom:8px;}
+.mc-t{font-size:0.86rem;font-weight:600;color:var(--white);margin-bottom:10px;}
+.mc-b{font-size:0.77rem;font-weight:300;color:var(--muted);line-height:1.75;}
+.mc-b strong{color:rgba(255,107,53,0.8);font-weight:500;}
+
+/* TOOLKIT */
+.tools-section{background:var(--dark);}
+.tools-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.tc{background:var(--dark-3);border:1px solid var(--border-dim);padding:24px 20px;transition:transform 0.35s,box-shadow 0.35s,border-color 0.2s;transform-style:preserve-3d;}
+.tc:hover{border-color:rgba(255,107,53,0.35);transform:translateY(-6px) perspective(500px) rotateX(5deg) rotateY(-2deg);box-shadow:0 16px 32px rgba(0,0,0,0.4),0 4px 0 var(--orange);}
+.tc-ico{font-size:1.3rem;margin-bottom:10px;}
+.tc-name{font-size:0.83rem;font-weight:600;color:var(--orange);margin-bottom:5px;}
+.tc-desc{font-size:0.72rem;font-weight:300;color:var(--muted);line-height:1.6;}
+.tc-bar{margin-top:12px;height:1px;background:var(--border-dim);}
+.tc-fill{height:100%;background:linear-gradient(90deg,var(--orange),rgba(255,107,53,0.3));animation:fillBar 1.6s ease-out forwards;}
+@keyframes fillBar{from{width:0!important};}
+
+/* STORIES */
+.stories-section{background:var(--dark-2);}
+.stories-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.sc{background:var(--panel);border:1px solid var(--border-dim);border-left:2px solid var(--orange);padding:32px;position:relative;overflow:hidden;transition:transform 0.35s,box-shadow 0.35s;transform-style:preserve-3d;}
+.sc:hover{transform:perspective(600px) rotateY(-2deg) rotateX(2deg) translateY(-5px);box-shadow:10px 14px 36px rgba(0,0,0,0.4),0 0 0 1px rgba(255,107,53,0.1);}
+.sc-tag{font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--orange);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;display:block;}
+.sc-title{font-size:1rem;font-weight:700;color:var(--white);margin-bottom:10px;line-height:1.3;}
+.sc-body{font-size:0.78rem;font-weight:300;color:var(--muted);line-height:1.8;margin-bottom:18px;}
+.sc-result{display:flex;align-items:baseline;gap:10px;padding:12px 14px;background:rgba(255,107,53,0.06);border-left:2px solid var(--orange);}
+.scr-n{font-family:'Space Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--orange);}
+.scr-t{font-size:0.72rem;font-weight:400;color:var(--muted);line-height:1.4;}
+
+/* CTA */
+.cta-section{background:var(--dark-3);border-top:1px solid var(--border);padding:80px 56px;}
+#cta-canvas{position:absolute;inset:0;z-index:0;opacity:0.4;}
+.cta-inner{max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;position:relative;z-index:1;}
+.cta-mono{font-family:'Space Mono',monospace;font-size:0.65rem;color:rgba(255,107,53,0.5);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:12px;}
+.cta-title{font-size:clamp(1.8rem,3.5vw,2.6rem);font-weight:700;color:var(--white);line-height:1.05;letter-spacing:-0.01em;}
+.cta-title em{color:var(--orange);font-style:normal;}
+.cta-right{display:flex;flex-direction:column;gap:18px;}
+.cta-sub{font-size:0.87rem;font-weight:300;color:var(--muted);line-height:1.75;}
+.cta-sub strong{color:rgba(255,255,255,0.7);font-weight:400;}
+.cta-btns{display:flex;gap:12px;flex-wrap:wrap;}
+.cta-links{display:flex;flex-direction:column;gap:8px;}
+.cta-link{font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--muted);text-decoration:none;transition:color 0.2s;display:flex;align-items:center;gap:8px;}
+.cta-link:hover{color:var(--orange);}
+.cta-link::before{content:'>';color:rgba(255,107,53,0.4);}
+
+@media(max-width:900px){
+  nav{padding:0 20px;}.nav-links{display:none;}
+  .hero-content{padding:0 24px;}
+  .print-progress{display:none;}
+  section{padding:56px 20px;}
+  .match-grid,.tools-grid,.stories-grid,.cta-inner{grid-template-columns:1fr;}
+  .metrics-inner{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<a href="mailto:kattasa1@msu.edu?subject=Formlabs Supply Chain Planner" class="float">
+  <div class="fdot"></div>Available June 2026
+</a>
+
+<nav>
+  <div class="logo">sai_priya.<span>katta</span></div>
+  <div class="nav-links">
+    <a href="#why">Why Me</a>
+    <a href="#tools">Toolkit</a>
+    <a href="#stories">Stories</a>
+    <a href="#contact" class="nav-cta">Contact</a>
+  </div>
+</nav>
+
+<section class="hero" id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="scanline"></div>
+
+  <div class="hero-content">
+    <div class="hero-mono"><span>// </span>role: Supply Chain Planner &nbsp;|&nbsp; Formlabs &nbsp;|&nbsp; Somerville, MA</div>
+    <div class="hero-name">Sai Priya<br><em>Katta</em></div>
+    <div class="hero-role">MSU MBA Supply Chain &nbsp;|&nbsp; May 2026 &nbsp;|&nbsp; 3+ Years Planning and Inventory</div>
+    <div class="hero-sub"><strong>Demand planner and supply chain analyst</strong> with 3+ years managing inventory, vendor performance, and procurement operations across 30+ client environments, including medical device and regulated manufacturing settings.</div>
+    <div class="hero-btns">
+      <a href="#stories" class="btn-orange">See My Work</a>
+      <a href="#contact" class="btn-outline">Get In Touch</a>
+    </div>
+  </div>
+
+  <div class="print-progress">
+    <div class="pp-label">Build status</div>
+    <div class="pp-bar-wrap"><div class="pp-bar"></div></div>
+    <div class="pp-stats">
+      <div class="pp-stat">
+        <div class="pp-stat-n">3.78</div>
+        <div class="pp-stat-l">MBA GPA</div>
+      </div>
+      <div class="pp-stat">
+        <div class="pp-stat-n">3+</div>
+        <div class="pp-stat-l">Years experience</div>
+      </div>
+      <div class="pp-stat">
+        <div class="pp-stat-n">30+</div>
+        <div class="pp-stat-l">Clients managed</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- METRICS -->
+<div class="metrics-section">
+  <div class="metrics-inner">
+    <div class="met">
+      <div class="met-n">$70K+</div>
+      <div class="met-l">Inventory discrepancies resolved</div>
+      <div class="met-s">ERP audits and cycle counts across 30+ client portfolios</div>
+    </div>
+    <div class="met">
+      <div class="met-n">50%</div>
+      <div class="met-l">Last-minute orders eliminated</div>
+      <div class="met-s">Demand-driven planning tools and week-ahead procurement trackers</div>
+    </div>
+    <div class="met">
+      <div class="met-n">25%</div>
+      <div class="met-l">Excess inventory reduced</div>
+      <div class="met-s">Root cause analysis and safety stock correction across client operations</div>
+    </div>
+    <div class="met">
+      <div class="met-n">2nd</div>
+      <div class="met-l">Overall in supply chain simulation</div>
+      <div class="met-s">MSU LOGA simulation, 1st regional -- DC network redesign and S&OP optimization</div>
+    </div>
+  </div>
+</div>
+
+<!-- WHY ME -->
+<section id="why" class="why-section">
+  <div class="s-inner">
+    <div class="s-mono">// role_requirements</div>
+    <div class="s-title">What Formlabs needs.<br>What I bring.</div>
+    <div class="match-grid">
+      <div class="mc">
+        <div class="mc-n">01</div>
+        <div class="mc-t">Demand Forecasting and S&OP</div>
+        <div class="mc-b">Built <strong>demand planning models in Excel and Google Sheets</strong> that identified recurring demand gaps and supply shortages across 4 active projects. MSU LOGA simulation placed 2nd overall through S&OP cycle redesign and DC network optimization across a 4-firm competitive environment.</div>
+      </div>
+      <div class="mc">
+        <div class="mc-n">02</div>
+        <div class="mc-t">Inventory Management and Safety Stock</div>
+        <div class="mc-b">Drove a <strong>25% reduction in excess inventory</strong> across client portfolios by diagnosing stock valuation inaccuracies, correcting ERP data errors, and implementing safety stock and reorder frameworks with clear accountability checkpoints.</div>
+      </div>
+      <div class="mc">
+        <div class="mc-n">03</div>
+        <div class="mc-t">Contract Manufacturer Scheduling</div>
+        <div class="mc-b">Coordinated <strong>10+ supplier relationships</strong> end-to-end -- managing delivery schedules, PO processing, order prioritization, and SLA monitoring to ensure timely delivery against project commitments across 4 concurrent operations.</div>
+      </div>
+      <div class="mc">
+        <div class="mc-n">04</div>
+        <div class="mc-t">Excel and Google Sheets -- Expert Level</div>
+        <div class="mc-b">Advanced Excel proficiency across <strong>pivot tables, VLOOKUP, demand trackers, cost comparison matrices, and KPI dashboards</strong>. Built week-ahead procurement planning tools that cut last-minute orders by 50% across all active projects.</div>
+      </div>
+      <div class="mc">
+        <div class="mc-n">05</div>
+        <div class="mc-t">ERP and SQL</div>
+        <div class="mc-b">Hands-on <strong>Tally ERP</strong> for PO processing, inventory management, and vendor payment workflows. <strong>SAP ERP</strong> via academic supply chain simulation. SQL listed in skills with experience in database querying for supply chain data analysis.</div>
+      </div>
+      <div class="mc">
+        <div class="mc-n">06</div>
+        <div class="mc-t">Life Sciences and Regulated Manufacturing</div>
+        <div class="mc-b">Direct experience supporting <strong>medical device commercialization</strong> at Annoviant Inc. -- competitor benchmarking, regulatory pipeline analysis, and market positioning for TxGuard across 35+ clinical-stage pipelines. MBA preferred -- check.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOLKIT -->
+<section id="tools" class="tools-section">
+  <div class="s-inner">
+    <div class="s-mono">// technical_skills</div>
+    <div class="s-title">The planning toolkit.<br>Already running.</div>
+    <div class="tools-grid">
+      <div class="tc"><div class="tc-ico">📗</div><div class="tc-name">Excel and Google Sheets</div><div class="tc-desc">Expert level: pivot tables, VLOOKUP, demand models, safety stock calculators, KPI dashboards, scenario planning.</div><div class="tc-bar"><div class="tc-fill" style="width:95%"></div></div></div>
+      <div class="tc"><div class="tc-ico">📊</div><div class="tc-name">Power BI</div><div class="tc-desc">Advanced DAX, multi-source inventory reconciliation, executive dashboards. Unblocked $30K in frozen funding in 7 days.</div><div class="tc-bar"><div class="tc-fill" style="width:90%"></div></div></div>
+      <div class="tc"><div class="tc-ico">🗄️</div><div class="tc-name">ERP Systems</div><div class="tc-desc">Tally ERP hands-on: PO processing, inventory management, vendor payments. SAP ERP via supply chain simulation.</div><div class="tc-bar"><div class="tc-fill" style="width:80%"></div></div></div>
+      <div class="tc"><div class="tc-ico">🔍</div><div class="tc-name">SQL</div><div class="tc-desc">Database querying for supply chain data extraction, spend analysis, and inventory reporting across multiple sources.</div><div class="tc-bar"><div class="tc-fill" style="width:70%"></div></div></div>
+      <div class="tc"><div class="tc-ico">📈</div><div class="tc-name">Demand Planning</div><div class="tc-desc">S&OP cycle support, demand signal analysis, safety stock modeling, reorder point frameworks, week-ahead forecasting.</div><div class="tc-bar"><div class="tc-fill" style="width:85%"></div></div></div>
+      <div class="tc"><div class="tc-ico">🏭</div><div class="tc-name">Inventory Management</div><div class="tc-desc">Cycle counts, stock valuation, ERP reconciliation, excess inventory reduction. 25% excess inventory cut across 30+ clients.</div><div class="tc-bar"><div class="tc-fill" style="width:88%"></div></div></div>
+      <div class="tc"><div class="tc-ico">📈</div><div class="tc-name">Tableau</div><div class="tc-desc">Data visualization and supply chain performance reporting through MBA coursework and project-based analysis.</div><div class="tc-bar"><div class="tc-fill" style="width:65%"></div></div></div>
+      <div class="tc"><div class="tc-ico">🎓</div><div class="tc-name">MSU MBA -- Supply Chain</div><div class="tc-desc">GPA 3.78 -- Supply Chain Analytics, AI in Supply Chain, Operations Strategy -- VP GSCMA -- LOGA 2nd overall -- May 2026</div><div class="tc-bar"><div class="tc-fill" style="width:100%"></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- STORIES -->
+<section id="stories" class="stories-section">
+  <div class="s-inner">
+    <div class="s-mono">// featured_work</div>
+    <div class="s-title">Four stories.<br>Measurable outcomes.</div>
+    <div class="stories-grid">
+      <div class="sc">
+        <span class="sc-tag">// demand_planning</span>
+        <div class="sc-title">Week-Ahead Demand Tracker That Eliminated 50% of Emergency Orders</div>
+        <div class="sc-body">Supply shortages were recurring across 4 active projects because no system was monitoring upcoming material demand against supplier lead times. I analyzed historical procurement patterns, identified recurring shortage triggers, and built Excel-based demand planning trackers that flagged replenishment needs before they became urgent. The result was a 50% reduction in last-minute emergency orders across all active operations.</div>
+        <div class="sc-result"><div class="scr-n">50%</div><div class="scr-t">reduction in last-minute emergency orders through demand-driven pre-planning</div></div>
+      </div>
+      <div class="sc">
+        <span class="sc-tag">// inventory_management</span>
+        <div class="sc-title">Root Cause Analysis That Cut Excess Inventory by 25% Across 30 Client Portfolios</div>
+        <div class="sc-body">Clients were carrying 25%+ excess inventory due to stock valuation inaccuracies, ERP data errors, and no systematic review process. I conducted structured cycle counts, corrected Tally ERP errors, and built supplier performance scorecards with reorder frameworks. Each engagement concluded with a corrective action plan that held vendors and operations teams accountable to inventory accuracy targets.</div>
+        <div class="sc-result"><div class="scr-n">25%</div><div class="scr-t">reduction in excess inventory across 30+ client portfolios through structured cycle counts and ERP correction</div></div>
+      </div>
+      <div class="sc">
+        <span class="sc-tag">// s_and_op_simulation</span>
+        <div class="sc-title">S&OP Network Redesign That Placed 2nd Overall in MSU Supply Chain Simulation</div>
+        <div class="sc-body">Competing in MSU's LOGA supply chain simulation against 3 other firms, I led the redesign of our distribution center network and optimized procurement, production, and transportation decisions across simulated S&OP cycles. Performance was tracked via Google Sheets KPI dashboards monitoring logistics variance, market share, and cost efficiency. The result was 1st regional and 2nd overall finish across all competing teams.</div>
+        <div class="sc-result"><div class="scr-n">2nd overall</div><div class="scr-t">MSU LOGA simulation -- 1st regional -- DC network redesign and S&OP optimization</div></div>
+      </div>
+      <div class="sc">
+        <span class="sc-tag">// life_sciences_experience</span>
+        <div class="sc-title">Medical Device Market Analysis Supporting $18M+ in Investment Prioritization</div>
+        <div class="sc-body">At Annoviant Inc., I led cost and go-to-market analysis for TxGuard, a medical device in development, by benchmarking 35+ competitor pipelines across clinical stage, pricing, and funding activity. I built Power BI dashboards mapping cardiovascular deal activities, M&OP trends, and high-growth market segments, directly supporting senior leadership's investment prioritization and partnership strategy decisions in a regulated life sciences environment.</div>
+        <div class="sc-result"><div class="scr-n">35+</div><div class="scr-t">competitor pipelines analyzed in regulated medical device environment -- Annoviant Inc.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="contact" class="cta-section">
+  <canvas id="cta-canvas"></canvas>
+  <div class="cta-inner">
+    <div>
+      <div class="cta-mono">// let_us_connect</div>
+      <div class="cta-title">Ready to plan <em>Formlabs'</em> supply chain from day one.</div>
+    </div>
+    <div class="cta-right">
+      <div class="cta-sub">I would love a <strong>20-minute call this week</strong> to walk through any of these stories or discuss what the role needs right now.</div>
+      <div class="cta-btns">
+        <a href="mailto:kattasa1@msu.edu?subject=Formlabs Supply Chain Planner" class="btn-orange">Email Me</a>
+        <a href="tel:+15175997312" class="btn-outline">Call: (517) 599-7312</a>
+      </div>
+      <div class="cta-links">
+        <a href="https://www.linkedin.com/in/saipriyakatta/" class="cta-link" target="_blank">linkedin.com/in/saipriyakatta</a>
+        <span class="cta-link">kattasa1@msu.edu</span>
+        <span class="cta-link">Open to relocation to Somerville, MA &nbsp;|&nbsp; Available June 2026</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+/* =====================================================
+   3D PRINTER BUILD ANIMATION
+   Concept: a Formlabs SLA printer building an object
+   layer by layer -- resin pool, build platform rising,
+   UV laser sweeping each layer.
+   ===================================================== */
+(function(){
+  const canvas = document.getElementById('hero-canvas');
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setClearColor(0x0A0A0F,1);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.set(6, 5, 10);
+  camera.lookAt(0, 1, 0);
+
+  // Dim ambient
+  scene.add(new THREE.AmbientLight(0x111122, 1));
+
+  // Orange point light (UV laser glow)
+  const laserLight = new THREE.PointLight(0xFF6B35, 2, 8);
+  laserLight.position.set(0, 2, 0);
+  scene.add(laserLight);
+
+  // Blue accent light
+  const blueLight = new THREE.PointLight(0x3366FF, 0.8, 12);
+  blueLight.position.set(-4, 4, -2);
+  scene.add(blueLight);
+
+  // Resin tank (flat plane, semi-transparent)
+  const tankGeo = new THREE.BoxGeometry(4, 0.05, 3);
+  const tankMat = new THREE.MeshBasicMaterial({color:0xFF6B35, transparent:true, opacity:0.08, side:THREE.DoubleSide});
+  const tank = new THREE.Mesh(tankGeo, tankMat);
+  tank.position.set(0, -0.5, 0);
+  scene.add(tank);
+
+  // Tank frame
+  const frameGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(4, 0.2, 3));
+  const frameMat = new THREE.LineBasicMaterial({color:0xFF6B35, transparent:true, opacity:0.3});
+  scene.add(new THREE.LineSegments(frameGeo, frameMat));
+
+  // Build platform (rises as layers are added)
+  const platGeo = new THREE.BoxGeometry(2.8, 0.06, 2);
+  const platMat = new THREE.MeshBasicMaterial({color:0x2A2A3A});
+  const platform = new THREE.Mesh(platGeo, platMat);
+  scene.add(platform);
+
+  // Vertical rails
+  [-1.6, 1.6].forEach(x => {
+    const railGeo = new THREE.CylinderGeometry(0.03, 0.03, 6, 8);
+    const railMat = new THREE.MeshBasicMaterial({color:0x333344, transparent:true, opacity:0.6});
+    const rail = new THREE.Mesh(railGeo, railMat);
+    rail.position.set(x, 2.5, 0);
+    scene.add(rail);
+  });
+
+  // Build layers -- thin slices of a torus-like shape being printed
+  const LAYERS = 28;
+  const layerMeshes = [];
+  for (let i = 0; i < LAYERS; i++) {
+    const t = i / LAYERS;
+    const r = 0.5 + 0.4 * Math.sin(t * Math.PI);
+    const geo = new THREE.TorusGeometry(r, 0.06, 6, 20);
+    const mat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color().lerpColors(new THREE.Color(0xFF6B35), new THREE.Color(0xFFAA66), t),
+      transparent: true,
+      opacity: 0
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.rotation.x = Math.PI / 2;
+    mesh.position.y = -0.5 + i * 0.12;
+    scene.add(mesh);
+    layerMeshes.push(mesh);
+  }
+
+  // Laser beam (thin line from UV source to current layer)
+  const laserPts = [new THREE.Vector3(0, 5, 0), new THREE.Vector3(0, 0, 0)];
+  const laserGeo = new THREE.BufferGeometry().setFromPoints(laserPts);
+  const laserMat = new THREE.LineBasicMaterial({color:0xFF6B35, transparent:true, opacity:0.6});
+  const laser = new THREE.Line(laserGeo, laserMat);
+  scene.add(laser);
+
+  // UV source housing
+  const uvGeo = new THREE.BoxGeometry(0.4, 0.15, 0.4);
+  const uvMat = new THREE.MeshBasicMaterial({color:0x1A1A2A});
+  const uvSource = new THREE.Mesh(uvGeo, uvMat);
+  uvSource.position.set(0, 5, 0);
+  scene.add(uvSource);
+
+  // Grid floor
+  const gridHelper = new THREE.GridHelper(20, 20, 0x222233, 0x151520);
+  gridHelper.position.y = -1;
+  scene.add(gridHelper);
+
+  // Floating particles (resin droplets effect)
+  const PART_N = 60;
+  const partGeo = new THREE.BufferGeometry();
+  const partPos = new Float32Array(PART_N * 3);
+  for (let i = 0; i < PART_N; i++) {
+    partPos[i*3]   = (Math.random()-0.5)*8;
+    partPos[i*3+1] = Math.random()*6-1;
+    partPos[i*3+2] = (Math.random()-0.5)*6;
+  }
+  partGeo.setAttribute('position', new THREE.BufferAttribute(partPos, 3));
+  scene.add(new THREE.Points(partGeo, new THREE.PointsMaterial({size:0.03, color:0xFF6B35, transparent:true, opacity:0.3})));
+
+  function resize(){
+    const w=canvas.offsetWidth, h=canvas.offsetHeight;
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize',resize);
+
+  let clock=0;
+  let currentLayer=0;
+  const LAYER_INTERVAL = 0.4; // seconds per layer reveal
+  let lastLayerTime = 0;
+
+  function animate(){
+    requestAnimationFrame(animate);
+    clock += 0.012;
+
+    // Slow camera orbit
+    camera.position.x = Math.sin(clock*0.08) * 10;
+    camera.position.z = Math.cos(clock*0.08) * 10;
+    camera.lookAt(0, 1.5, 0);
+
+    // Layer-by-layer reveal (loop back after complete)
+    const layerTime = (clock % (LAYERS * LAYER_INTERVAL));
+    const visibleLayers = Math.floor(layerTime / LAYER_INTERVAL);
+
+    layerMeshes.forEach((m, i) => {
+      if (i < visibleLayers) {
+        m.material.opacity = Math.min(0.85, m.material.opacity + 0.04);
+      } else {
+        m.material.opacity = Math.max(0, m.material.opacity - 0.06);
+      }
+    });
+
+    // Platform rises with layers
+    const targetY = -0.5 + visibleLayers * 0.12 - 0.1;
+    platform.position.y = targetY;
+
+    // Laser points to current build layer
+    const buildY = -0.5 + visibleLayers * 0.12;
+    const laserAngle = clock * 3;
+    const laserR = 0.4 + 0.35 * Math.sin(clock * 2);
+    laserLight.position.set(Math.cos(laserAngle)*laserR, buildY, Math.sin(laserAngle)*laserR);
+    laserLight.intensity = 1.5 + Math.sin(clock*8)*0.5;
+
+    // Update laser beam geometry
+    const lp = laserGeo.attributes.position.array;
+    lp[0]=0;lp[1]=5;lp[2]=0;
+    lp[3]=Math.cos(laserAngle)*laserR;lp[4]=buildY;lp[5]=Math.sin(laserAngle)*laserR;
+    laserGeo.attributes.position.needsUpdate=true;
+
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+
+/* CTA mini version */
+(function(){
+  const canvas = document.getElementById('cta-canvas');
+  if(!canvas)return;
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setClearColor(0,0);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(50,2,0.1,100);
+  camera.position.set(0,2,8);
+  camera.lookAt(0,0,0);
+
+  // Simple torus being built in CTA
+  const torusGeo=new THREE.TorusGeometry(1,0.3,8,24);
+  const torusMat=new THREE.MeshBasicMaterial({color:0xFF6B35,wireframe:true,transparent:true,opacity:0.15});
+  scene.add(new THREE.Mesh(torusGeo,torusMat));
+
+  const gl=new THREE.GridHelper(12,12,0xFF6B35,0x1A1A25);
+  gl.position.y=-1.5;
+  scene.add(gl);
+
+  function resize(){const w=canvas.offsetWidth,h=canvas.offsetHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+  resize();window.addEventListener('resize',resize);
+  let t=0;
+  (function loop(){requestAnimationFrame(loop);t+=0.006;scene.children[0].rotation.x=t*0.3;scene.children[0].rotation.y=t*0.2;renderer.render(scene,camera);})();
+})();
+</script>
+</body>
+</html>
